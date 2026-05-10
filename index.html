@@ -128,7 +128,20 @@
     <button id="btn-abort" class="btn abort-btn" style="display: none;" onclick="abortWorkout()">🛑 중단하기</button>
   </div>
 </div>
-
+<div id="modal-add-ex" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; justify-content:center; align-items:center;">
+    <div style="background:var(--card); padding:20px; border-radius:12px; width:80%; max-width:320px; text-align:center; border:1px solid #333;">
+      <h3 style="margin-top:0; color:var(--accent);">새 운동 추가</h3>
+      
+      <input type="text" id="new-ex-name" placeholder="운동 이름 (예: 플랭크)" style="width:100%; padding:12px; margin-bottom:15px; box-sizing:border-box; background:#000; color:#fff; border:1px solid #555; border-radius:8px; font-size:16px;">
+      
+      <div style="display:flex; gap:10px; margin-bottom:10px;">
+        <button class="btn" style="padding:15px 5px; margin:0; font-size:14px;" onclick="submitNewExercise('reps')">🔄 횟수 반복</button>
+        <button class="btn" style="padding:15px 5px; margin:0; font-size:14px; background:#222; border-color:#444;" onclick="submitNewExercise('time')">⏱️ 시간 버티기</button>
+      </div>
+      
+      <button class="btn abort-btn" style="margin-top:10px; padding:10px;" onclick="closeAddModal()">취소</button>
+    </div>
+  </div>
 <script>
   // --- PWA 서비스 워커 등록 추가 ---
   if ('serviceWorker' in navigator) {
@@ -225,21 +238,28 @@ function buildCalendar() {
   }
 
 function addNewExercise() {
-    let name = prompt("새로운 운동 종목 이름을 입력하세요:");
-    if (!name || name.trim() === '') return;
+    document.getElementById('new-ex-name').value = ''; // 입력칸 초기화
+    document.getElementById('modal-add-ex').style.display = 'flex'; // 팝업 띄우기
+  } 
+  function closeAddModal() {
+    document.getElementById('modal-add-ex').style.display = 'none';
+  }
+function submitNewExercise(type) {
+    let name = document.getElementById('new-ex-name').value.trim();
+    
+    if (!name) { alert("운동 이름을 입력해주세요!"); return; }
     if (userConfig[name]) { alert("이미 존재하는 운동입니다."); return; }
     
-    // 횟수 운동인지 시간 운동인지 확인
-    let isReps = confirm("횟수를 반복하는 운동인가요?\n(확인: 횟수 반복, 취소: 시간 버티기)");
-    
-    if (isReps) {
+    // 선택한 타입에 맞춰 데이터 생성
+    if (type === 'reps') {
       userConfig[name] = { type: 'reps', prep: 4, sets: [10], rest: 30, speed: 1000 };
     } else {
-      userConfig[name] = { type: 'time', prep: 4, sets: [60], rest: 30 }; // 버티기는 기본 60초
+      userConfig[name] = { type: 'time', prep: 4, sets: [60], rest: 30 };
     }
     
     localStorage.setItem('userWorkoutConfig', JSON.stringify(userConfig));
-    renderExerciseList();
+    closeAddModal();      // 팝업 닫기
+    renderExerciseList(); // 목록 새로고침
   }
   function deleteExercise() {
     if (confirm(`정말 '${currentEx}' 종목을 삭제하시겠습니까?`)) {
