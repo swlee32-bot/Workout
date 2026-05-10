@@ -25,3 +25,9 @@ self.addEventListener('fetch', event => {
       })
   );
 });
+// 클라이언트(index.html)에서 업데이트하라는 메시지를 받으면 즉시 대기열을 건너뛰고 활성화
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
