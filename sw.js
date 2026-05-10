@@ -1,4 +1,4 @@
-const CACHE_NAME = 'workout-pwa-v1';
+const CACHE_NAME = 'workout-pwa-v2';
 const urlsToCache = [
   './',
   './index.html',
