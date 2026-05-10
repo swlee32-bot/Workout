@@ -60,8 +60,12 @@
 
 <div class="container">
   <!-- 달력 화면 -->
-  <div id="view-cal" class="view active">
-    <h2 id="calendar-title">년 월</h2>
+<div id="view-cal" class="view active">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin: 30px 0;">
+      <button class="btn" style="width: auto; margin: 0; padding: 10px 15px; background: transparent; border: 1px solid #333;" onclick="changeMonth(-1)">◀</button>
+      <h2 id="calendar-title" style="margin: 0;">년 월</h2>
+      <button class="btn" style="width: auto; margin: 0; padding: 10px 15px; background: transparent; border: 1px solid #333;" onclick="changeMonth(1)">▶</button>
+    </div>
     <div class="cal-header"><div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div></div>
     <div id="calendar-grid" class="calendar"></div>
   </div>
@@ -146,9 +150,9 @@
     localStorage.setItem('userWorkoutConfig', JSON.stringify(userConfig));
   }
 
-  const todayDateObj = new Date();
-  const currentYear = todayDateObj.getFullYear();
-  const currentMonth = todayDateObj.getMonth(); 
+const todayDateObj = new Date();
+  let currentYear = todayDateObj.getFullYear();
+  let currentMonth = todayDateObj.getMonth(); 
   const todayDay = todayDateObj.getDate();
 
   let selectedDateKey = ''; 
@@ -164,7 +168,7 @@
     document.getElementById(id).classList.add('active');
   }
 
-  function buildCalendar() {
+function buildCalendar() {
     document.getElementById('calendar-title').innerText = `${currentYear}년 ${currentMonth + 1}월`;
     const grid = document.getElementById('calendar-grid');
     grid.innerHTML = ''; 
@@ -177,10 +181,15 @@
       let el = document.createElement('div'); el.className = 'day empty'; grid.appendChild(el);
     }
     
+    // 현재 실제 날짜와 화면에 띄워진 연/월이 같은지 확인
+    const isRealThisMonth = (currentYear === todayDateObj.getFullYear() && currentMonth === todayDateObj.getMonth());
+
     for (let i = 1; i <= totalDays; i++) {
       let el = document.createElement('div'); 
       el.className = 'day'; el.innerText = i;
-      if (i === todayDay) el.classList.add('today');
+      
+      // 실제 이번 달일 때만 오늘 날짜 하이라이트 적용
+      if (isRealThisMonth && i === todayDay) el.classList.add('today');
 
       const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
 
@@ -377,6 +386,18 @@
   }
 
   function goToCalendar() { buildCalendar(); showView('view-cal'); }
+  function changeMonth(offset) {
+    currentMonth += offset;
+    // 연도 넘어가기 처리
+    if (currentMonth < 0) {
+      currentMonth = 11;
+      currentYear--;
+    } else if (currentMonth > 11) {
+      currentMonth = 0;
+      currentYear++;
+    }
+    buildCalendar();
+  }
 </script>
 
 </body>
