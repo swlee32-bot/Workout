@@ -144,14 +144,36 @@
   </div>
 <script>
   // --- PWA 서비스 워커 등록 추가 ---
+// --- PWA 서비스 워커 자동 업데이트 로직 ---
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(reg => console.log('서비스 워커 등록 성공:', reg.scope))
-        .catch(err => console.log('서비스 워커 등록 실패:', err));
+      navigator.serviceWorker.register('./sw.js').then(reg => {
+        console.log('서비스 워커 등록 성공:', reg.scope);
+
+        // 새로운 버전(업데이트)이 발견되었을 때
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          newWorker.addEventListener('statechange', () => {
+            // 새 서비스워커 설치가 끝났고, 기존에 이미 앱을 쓰고 있던 상태라면
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              console.log('새로운 업데이트가 발견되어 자동으로 적용합니다.');
+              // 새 서비스 워커에게 "대기하지 말고 당장 일해!" 라고 메시지 전송
+              newWorker.postMessage({ type: 'SKIP_WAITING' });
+            }
+          });
+        });
+      }).catch(err => console.log('서비스 워커 등록 실패:', err));
+
+      // 서비스 워커가 새로 교체되어 제어권을 잡으면 자동으로 새로고침
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          window.location.reload();
+          refreshing = true;
+        }
+      });
     });
   }
-
 let userConfig = JSON.parse(localStorage.getItem('userWorkoutConfig'));
   if (!userConfig || Object.keys(userConfig).length === 0) {
     userConfig = {
