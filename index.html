@@ -139,17 +139,19 @@
     });
   }
 
-  // 기존 앱 로직
-  let userConfig = JSON.parse(localStorage.getItem('userWorkoutConfig'));
+let userConfig = JSON.parse(localStorage.getItem('userWorkoutConfig'));
   if (!userConfig || Object.keys(userConfig).length === 0) {
     userConfig = {
-      '푸쉬업': { prep: 4, sets: [45, 30, 25], rest: 30, speed: 500 }, 
-      '스쿼트': { prep: 4, sets: [20, 12, 10], rest: 30, speed: 1000 }, 
-      '턱걸이': { prep: 10, sets: [10], rest: 0, speed: 1000 } 
+      // 기본 운동들에도 type: 'reps' 속성을 추가했습니다.
+      '푸쉬업': { type: 'reps', prep: 4, sets: [45, 30, 25], rest: 30, speed: 500 }, 
+      '스쿼트': { type: 'reps', prep: 4, sets: [20, 12, 10], rest: 30, speed: 1000 }, 
+      '턱걸이': { type: 'reps', prep: 10, sets: [10], rest: 0, speed: 1000 } 
     };
     localStorage.setItem('userWorkoutConfig', JSON.stringify(userConfig));
   }
-
+for (let key in userConfig) {
+    if (!userConfig[key].type) userConfig[key].type = 'reps';
+  }
 const todayDateObj = new Date();
   let currentYear = todayDateObj.getFullYear();
   let currentMonth = todayDateObj.getMonth(); 
@@ -222,15 +224,23 @@ function buildCalendar() {
     list.innerHTML += `<button class="btn" style="border: 1px dashed var(--accent); color: var(--accent); background: transparent;" onclick="addNewExercise()">+ 새 운동 추가</button>`;
   }
 
-  function addNewExercise() {
+function addNewExercise() {
     let name = prompt("새로운 운동 종목 이름을 입력하세요:");
     if (!name || name.trim() === '') return;
     if (userConfig[name]) { alert("이미 존재하는 운동입니다."); return; }
-    userConfig[name] = { prep: 4, sets: [10], rest: 30, speed: 1000 };
+    
+    // 횟수 운동인지 시간 운동인지 확인
+    let isReps = confirm("횟수를 반복하는 운동인가요?\n(확인: 횟수 반복, 취소: 시간 버티기)");
+    
+    if (isReps) {
+      userConfig[name] = { type: 'reps', prep: 4, sets: [10], rest: 30, speed: 1000 };
+    } else {
+      userConfig[name] = { type: 'time', prep: 4, sets: [60], rest: 30 }; // 버티기는 기본 60초
+    }
+    
     localStorage.setItem('userWorkoutConfig', JSON.stringify(userConfig));
     renderExerciseList();
   }
-
   function deleteExercise() {
     if (confirm(`정말 '${currentEx}' 종목을 삭제하시겠습니까?`)) {
       delete userConfig[currentEx];
@@ -239,12 +249,21 @@ function buildCalendar() {
     }
   }
 
-  function openConfig(name) {
+function openConfig(name) {
     currentEx = name;
     document.getElementById('config-title').innerText = `${name} 루틴 설정`;
     document.getElementById('input-prep').value = userConfig[name].prep;
     document.getElementById('input-rest').value = userConfig[name].rest;
-    document.getElementById('input-speed').value = (userConfig[name].speed / 1000).toFixed(1);
+    
+    // 버티기 운동이면 동작 간격(speed) 설정 숨기기
+    const speedRow = document.getElementById('input-speed').parentElement.parentElement;
+    if (userConfig[name].type === 'time') {
+      speedRow.style.display = 'none';
+    } else {
+      speedRow.style.display = 'flex';
+      document.getElementById('input-speed').value = (userConfig[name].speed / 1000).toFixed(1);
+    }
+    
     showView('view-config'); renderSets();
   }
 
@@ -252,27 +271,35 @@ function buildCalendar() {
     const container = document.getElementById('config-sets-container');
     container.innerHTML = '';
     const sets = userConfig[currentEx].sets;
-    sets.forEach((reps, index) => {
+    const isTime = userConfig[currentEx].type === 'time';
+    const unit = isTime ? '초' : '회'; // 타입에 따라 단위 변경
+
+    sets.forEach((val, index) => {
       container.innerHTML += `
         <div class="set-row">
           <span>${index + 1}세트</span>
-          <div><input type="number" id="set-input-${index}" class="set-input sets-input" value="${reps}" min="1"><span> 회</span></div>
+          <div><input type="number" id="set-input-${index}" class="set-input sets-input" value="${val}" min="1"><span> ${unit}</span></div>
         </div>
       `;
     });
   }
-
   function addSet() { userConfig[currentEx].sets.push(10); renderSets(); }
   function removeSet() {
     if (userConfig[currentEx].sets.length > 1) { userConfig[currentEx].sets.pop(); renderSets(); } 
     else { alert("최소 1개의 세트는 존재해야 합니다."); }
   }
 
-  function saveAndStart() {
+function saveAndStart() {
     let prepVal = parseInt(document.getElementById('input-prep').value) || 4;
     let restVal = parseInt(document.getElementById('input-rest').value) || 0;
-    let speedSec = parseFloat(document.getElementById('input-speed').value) || 1.0;
-    userConfig[currentEx].prep = prepVal; userConfig[currentEx].rest = restVal; userConfig[currentEx].speed = speedSec * 1000; 
+    
+    userConfig[currentEx].prep = prepVal; 
+    userConfig[currentEx].rest = restVal; 
+    
+    if (userConfig[currentEx].type !== 'time') {
+      let speedSec = parseFloat(document.getElementById('input-speed').value) || 1.0;
+      userConfig[currentEx].speed = speedSec * 1000; 
+    }
 
     const inputs = document.querySelectorAll('.sets-input');
     let newSets = [];
@@ -283,7 +310,6 @@ function buildCalendar() {
     localStorage.setItem('userWorkoutConfig', JSON.stringify(userConfig));
     initTimerView();
   }
-
   function play(f, d) {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
@@ -302,7 +328,7 @@ function buildCalendar() {
     showView('view-timer');
   }
 
-  async function startEngine() {
+async function startEngine() {
     if (audioCtx?.state === 'suspended') audioCtx.resume();
     document.getElementById('btn-run').style.display = 'none'; document.getElementById('btn-abort').style.display = 'block'; 
     const cfg = userConfig[currentEx]; 
@@ -311,7 +337,8 @@ function buildCalendar() {
     if(isCancelled) return;
 
     for (let i = 0; i < cfg.sets.length; i++) {
-      await performSet(i + 1, cfg.sets[i], cfg.speed);
+      // type 정보를 같이 넘겨줌
+      await performSet(i + 1, cfg.sets[i], cfg.speed, cfg.type);
       if(isCancelled) return;
       if (i < cfg.sets.length - 1 && cfg.rest > 0) {
         await countdown(`휴식 (${i+1}세트 완료)`, cfg.rest);
@@ -320,7 +347,6 @@ function buildCalendar() {
     }
     if(!isCancelled) finishWorkout();
   }
-
   function abortWorkout() {
     isCancelled = true;
     if (activeInterval) clearInterval(activeInterval); if (resolveCurrentPromise) resolveCurrentPromise();
@@ -350,30 +376,53 @@ function buildCalendar() {
     });
   }
 
-  function performSet(setNum, reps, speed) {
+function performSet(setNum, repsOrTime, speed, type) {
     return new Promise(resolve => {
       resolveCurrentPromise = resolve;
-      let currentRep = 1; let phase = 0; 
       document.getElementById('ex-label').innerText = `${setNum}세트 진행 중`;
-      document.getElementById('ex-main').innerText = `${currentRep} / ${reps}`;
-      document.getElementById('ex-sub').innerText = "⬇️ 내려가기";
-      play(300, 0.15); phase = 1;
       
-      activeInterval = setInterval(() => {
-        if(isCancelled) { clearInterval(activeInterval); return; }
-        document.getElementById('ex-main').innerText = `${currentRep} / ${reps}`;
-        document.getElementById('ex-sub').innerText = phase === 0 ? "⬇️ 내려가기" : "⬆️ 올라오기";
+      if (type === 'time') {
+        // [버티기 운동 로직]
+        let timeLeft = repsOrTime;
+        document.getElementById('ex-main').innerText = timeLeft;
+        document.getElementById('ex-sub').innerText = "🔥 끝까지 버티세요!";
+        play(440, 0.3); 
         
-        if (phase === 0) { play(300, 0.15); phase = 1; } 
-        else {
-          play(600, 0.15); 
-          if (currentRep >= reps) { clearInterval(activeInterval); setTimeout(resolve, speed); } 
-          else { currentRep++; phase = 0; }
-        }
-      }, speed);
+        activeInterval = setInterval(() => {
+          if(isCancelled) { clearInterval(activeInterval); return; }
+          timeLeft--;
+          document.getElementById('ex-main').innerText = timeLeft;
+          
+          if (timeLeft <= 3 && timeLeft > 0) play(440, 0.2); // 종료 3초 전 알림
+          else if (timeLeft === 0) {
+            play(880, 0.5); // 종료음
+            clearInterval(activeInterval);
+            setTimeout(resolve, 1000);
+          }
+        }, 1000);
+
+      } else {
+        // [기존 횟수 반복 운동 로직]
+        let currentRep = 1; let phase = 0; 
+        document.getElementById('ex-main').innerText = `${currentRep} / ${repsOrTime}`;
+        document.getElementById('ex-sub').innerText = "⬇️ 내려가기";
+        play(300, 0.15); phase = 1;
+        
+        activeInterval = setInterval(() => {
+          if(isCancelled) { clearInterval(activeInterval); return; }
+          document.getElementById('ex-main').innerText = `${currentRep} / ${repsOrTime}`;
+          document.getElementById('ex-sub').innerText = phase === 0 ? "⬇️ 내려가기" : "⬆️ 올라오기";
+          
+          if (phase === 0) { play(300, 0.15); phase = 1; } 
+          else {
+            play(600, 0.15); 
+            if (currentRep >= repsOrTime) { clearInterval(activeInterval); setTimeout(resolve, speed); } 
+            else { currentRep++; phase = 0; }
+          }
+        }, speed);
+      }
     });
   }
-
   function finishWorkout() {
     document.getElementById('btn-abort').style.display = 'none';
     document.getElementById('ex-label').innerText = "🎉 완료"; document.getElementById('ex-main').innerText = "오운완!"; document.getElementById('ex-sub').innerText = "정말 수고하셨습니다";
