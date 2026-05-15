@@ -26,10 +26,28 @@
     .day.empty { background: transparent; cursor: default; border: none; }
     .day.today { border: 2px solid var(--accent); color: var(--accent); }
 
-    .record-badge {
-      font-size: 10px; background: var(--accent); color: #000;
-      padding: 2px 5px; border-radius: 4px; margin-top: 5px; text-align: center;
-      width: 85%; box-sizing: border-box; word-break: keep-all; font-weight: bold;
+.record-badge {
+      display: flex; 
+      justify-content: center; 
+      align-items: center;     
+      text-align: center;      
+      
+      font-size: 10px; 
+      background: var(--accent); 
+      color: #000;
+      
+      /* 변경된 부분: 위아래 패딩은 4px로 유지, 좌우 패딩은 0으로 제거 */
+      padding: 4px 0; 
+      
+      border-radius: 4px; 
+      margin-top: 5px; 
+      width: 85%; 
+      box-sizing: border-box; 
+      font-weight: bold;
+      
+      word-break: break-word; 
+      white-space: normal;
+      line-height: 1.2;
     }
 
     .btn { width: 100%; padding: 20px; background: var(--card); border: 1px solid #333; color: #fff; border-radius: 12px; margin-bottom: 15px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; }
@@ -219,7 +237,39 @@
   let activeInterval = null;
   let isCancelled = false;
   let resolveCurrentPromise = null;
+// --- 화면 꺼짐 방지(Wake Lock) 관련 변수 및 함수 ---
+  let wakeLock = null;
 
+  async function requestWakeLock() {
+    try {
+      if ('wakeLock' in navigator) {
+        wakeLock = await navigator.wakeLock.request('screen');
+        console.log('화면 꺼짐 방지 활성화');
+      }
+    } catch (err) {
+      console.error('Wake Lock 요청 실패:', err);
+    }
+  }
+
+  function releaseWakeLock() {
+    if (wakeLock !== null) {
+      wakeLock.release().then(() => {
+        wakeLock = null;
+        console.log('화면 꺼짐 방지 해제');
+      });
+    }
+  }
+
+  // 모바일 기기 특성상 다른 앱(카톡 등)으로 전환했다가 돌아오면 
+  // OS가 잠금을 강제로 풀어버리므로, 화면이 다시 보일 때 재요청하는 로직입니다.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && document.getElementById('view-timer').classList.contains('active')) {
+      // 타이머 뷰가 활성화되어 있고, 완료된 상태가 아니라면 다시 잠금
+      if (document.getElementById('ex-label').innerText !== "🎉 완료") {
+        requestWakeLock();
+      }
+    }
+  });
   // 상세/수정을 위한 글로벌 변수
   let currentEditRecordIndex = null;
   let currentEditRecordData = null;
@@ -529,6 +579,7 @@
     document.getElementById('btn-force-complete').style.display = 'none'; 
     document.getElementById('action-buttons').style.display = 'none';
     showView('view-timer');
+    requestWakeLock();
   }
 
   async function startEngine() {
@@ -557,6 +608,7 @@
     isCancelled = true;
     if (activeInterval) clearInterval(activeInterval); if (resolveCurrentPromise) resolveCurrentPromise();
     showView('view-cal');
+    releaseWakeLock();
   }
 
   function forceComplete() {
@@ -641,7 +693,8 @@
     document.getElementById('ex-main').innerText = "오운완!"; 
     document.getElementById('ex-sub').innerText = "정말 수고하셨습니다";
     document.getElementById('action-buttons').style.display = 'block';
-
+// 화면 꺼짐 방지 해제
+    releaseWakeLock();
     let history = JSON.parse(localStorage.getItem('workoutData')) || {};
     if (!history[selectedDateKey]) history[selectedDateKey] = [];
     
