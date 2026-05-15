@@ -235,6 +235,7 @@
   let currentEx = '';
   let audioCtx = null;
   let activeInterval = null;
+  let tempoInterval = null;
   let isCancelled = false;
   let resolveCurrentPromise = null;
 // --- 화면 꺼짐 방지(Wake Lock) 관련 변수 및 함수 ---
@@ -582,6 +583,7 @@
     requestWakeLock();
   }
 
+// --- 수정할 부분 3: startEngine ---
   async function startEngine() {
     if (audioCtx?.state === 'suspended') audioCtx.resume();
     document.getElementById('btn-run').style.display = 'none'; 
@@ -590,23 +592,26 @@
     
     const cfg = userConfig[currentEx]; 
     
-    await countdown("준비", cfg.prep);
+    // 속도와 타입을 파라미터로 전달
+    await countdown("준비", cfg.prep, cfg.speed, cfg.type);
     if(isCancelled) return;
 
     for (let i = 0; i < cfg.sets.length; i++) {
       await performSet(i + 1, cfg.sets[i], cfg.speed, cfg.type);
       if(isCancelled) return;
       if (i < cfg.sets.length - 1 && cfg.rest > 0) {
-        await countdown(`휴식 (${i+1}세트 완료)`, cfg.rest);
+        // 여기도 속도와 타입을 파라미터로 전달
+        await countdown(`휴식 (${i+1}세트 완료)`, cfg.rest, cfg.speed, cfg.type);
         if(isCancelled) return;
       }
     }
     if(!isCancelled) finishWorkout();
   }
-
   function abortWorkout() {
     isCancelled = true;
-    if (activeInterval) clearInterval(activeInterval); if (resolveCurrentPromise) resolveCurrentPromise();
+    if (activeInterval) clearInterval(activeInterval); 
+    if (tempoInterval) { clearInterval(tempoInterval); tempoInterval = null; } // 메트로놈 정지
+    if (resolveCurrentPromise) resolveCurrentPromise();
     showView('view-cal');
     releaseWakeLock();
   }
@@ -614,11 +619,13 @@
   function forceComplete() {
     isCancelled = true; 
     if (activeInterval) clearInterval(activeInterval);
+    if (tempoInterval) { clearInterval(tempoInterval); tempoInterval = null; } // 메트로놈 정지
     if (resolveCurrentPromise) resolveCurrentPromise();
     finishWorkout(); 
   }
 
-  function countdown(label, seconds) {
+// --- 수정할 부분 4: countdown ---
+  function countdown(label, seconds, speed, type) {
     return new Promise(resolve => {
       resolveCurrentPromise = resolve;
       let count = seconds;
@@ -626,21 +633,58 @@
       document.getElementById('ex-sub').innerText = "";
       document.getElementById('ex-main').innerText = count;
 
-      if(count <= 0) { resolve(); return; } 
-      if (count <= 4 && count > 0) play(440, 0.2); else if (count === 0) play(880, 0.4);
+      let phase = 0; // 템포 소리 높낮이용
+
+      if(count <= 0) { resolve(); return; }
+
+      function handleTick() {
+        if (type === 'reps') {
+          if (count <= 4 && count > 0) {
+            // 남은 시간 4초 이하일 때 설정된 템포에 맞춰 메트로놈 실행
+            if (!tempoInterval) {
+               play(300, 0.15); phase = 1;
+               tempoInterval = setInterval(() => {
+                 if(isCancelled) { clearInterval(tempoInterval); tempoInterval = null; return; }
+                 if (phase === 0) { play(300, 0.15); phase = 1; }
+                 else { play(600, 0.15); phase = 0; }
+               }, speed);
+            }
+          } else if (count === 0) {
+            if (activeInterval) clearInterval(activeInterval);
+            if (tempoInterval) { clearInterval(tempoInterval); tempoInterval = null; }
+            play(880, 0.4); // 시작/완료 알림음
+            setTimeout(resolve, 1000);
+          }
+        } else { 
+          // 버티기 운동(time)은 마지막 5초에만 카운트음 재생
+          if (count <= 5 && count > 0) {
+            play(440, 0.2);
+          } else if (count === 0) {
+            if (activeInterval) clearInterval(activeInterval);
+            if (tempoInterval) { clearInterval(tempoInterval); tempoInterval = null; }
+            play(880, 0.4);
+            setTimeout(resolve, 1000);
+          }
+        }
+      }
+
+      handleTick();
 
       activeInterval = setInterval(() => {
-        if(isCancelled) { clearInterval(activeInterval); return; }
+        if(isCancelled) {
+          if (activeInterval) clearInterval(activeInterval);
+          if (tempoInterval) { clearInterval(tempoInterval); tempoInterval = null; }
+          return;
+        }
         count--;
         if(count >= 0) {
           document.getElementById('ex-main').innerText = count;
-          if (count <= 4 && count > 0) play(440, 0.2);
-          else if (count === 0) { play(880, 0.4); clearInterval(activeInterval); setTimeout(resolve, 1000); }
+          handleTick();
         }
       }, 1000);
     });
   }
-
+// --- 수정할 부분 5: performSet ---
   function performSet(setNum, repsOrTime, speed, type) {
     return new Promise(resolve => {
       resolveCurrentPromise = resolve;
@@ -657,7 +701,8 @@
           timeLeft--;
           document.getElementById('ex-main').innerText = timeLeft;
           
-          if (timeLeft <= 3 && timeLeft > 0) play(440, 0.2); 
+          // 기존 timeLeft <= 3 에서 timeLeft <= 5 로 변경됨
+          if (timeLeft <= 5 && timeLeft > 0) play(440, 0.2); 
           else if (timeLeft === 0) {
             play(880, 0.5); 
             clearInterval(activeInterval);
@@ -685,7 +730,6 @@
       }
     });
   }
-
   function finishWorkout() {
     document.getElementById('btn-abort').style.display = 'none';
     document.getElementById('btn-force-complete').style.display = 'none'; 
