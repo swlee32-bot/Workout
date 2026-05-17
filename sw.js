@@ -1,5 +1,5 @@
 // 버전을 v9로 올려주세요. (코드를 수정할 때마다 이 숫자를 올려야 합니다)
-const CACHE_NAME = 'workout-pwa-v12'; 
+const CACHE_NAME = 'workout-pwa-v13'; 
 const urlsToCache = [
   './',
   './index.html',
