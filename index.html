@@ -26,28 +26,11 @@
     .day.empty { background: transparent; cursor: default; border: none; }
     .day.today { border: 2px solid var(--accent); color: var(--accent); }
 
-.record-badge {
-      display: flex; 
-      justify-content: center; 
-      align-items: center;     
-      text-align: center;      
-      
-      font-size: 10px; 
-      background: var(--accent); 
-      color: #000;
-      
-      /* 변경된 부분: 위아래 패딩은 4px로 유지, 좌우 패딩은 0으로 제거 */
-      padding: 4px 0; 
-      
-      border-radius: 4px; 
-      margin-top: 5px; 
-      width: 85%; 
-      box-sizing: border-box; 
-      font-weight: bold;
-      
-      word-break: break-word; 
-      white-space: normal;
-      line-height: 1.2;
+    .record-badge {
+      display: flex; justify-content: center; align-items: center; text-align: center;      
+      font-size: 10px; background: var(--accent); color: #000; padding: 4px 0; 
+      border-radius: 4px; margin-top: 5px; width: 85%; box-sizing: border-box; font-weight: bold;
+      word-break: break-word; white-space: normal; line-height: 1.2;
     }
 
     .btn { width: 100%; padding: 20px; background: var(--card); border: 1px solid #333; color: #fff; border-radius: 12px; margin-bottom: 15px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; }
@@ -58,9 +41,9 @@
 
     .config-section { background: #111; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #222; }
     .config-title { font-size: 14px; color: var(--accent); margin-bottom: 10px; font-weight: bold; display: flex; justify-content: space-between; align-items: center;}
-    .set-row { display: flex; align-items: center; justify-content: space-between; background: #1a1a1a; padding: 12px 15px; border-radius: 8px; margin-bottom: 8px; }
-    .set-row span { font-size: 16px; font-weight: bold; }
-    .set-input { width: 70px; padding: 8px; font-size: 18px; text-align: center; background: #000; border: 1px solid var(--accent); color: var(--accent); border-radius: 8px; font-weight: bold; }
+    .set-row { display: flex; align-items: center; justify-content: space-between; background: #1a1a1a; padding: 12px 15px; border-radius: 8px; margin-bottom: 8px; flex-wrap: wrap; gap: 10px;}
+    .set-row span { font-size: 15px; font-weight: bold; }
+    .set-input { width: 60px; padding: 8px; font-size: 16px; text-align: center; background: #000; border: 1px solid var(--accent); color: var(--accent); border-radius: 8px; font-weight: bold; }
     
     .action-row { display: flex; gap: 10px; margin-bottom: 20px; }
     .action-row .btn { margin-bottom: 0; padding: 15px; font-size: 16px; }
@@ -111,7 +94,7 @@
         <span>세트 간 휴식</span>
         <div><input type="number" id="input-rest" class="set-input" min="0"><span> 초</span></div>
       </div>
-      <div class="set-row">
+      <div class="set-row" id="speed-config-row">
         <span style="font-size: 14px;">동작 간격 (초)</span>
         <div><input type="number" step="0.1" id="input-speed" class="set-input" min="0.1"><span> 초</span></div>
       </div>
@@ -119,7 +102,7 @@
 
     <div class="config-section">
       <div class="config-title">
-        세트 및 횟수 설정
+        세트 및 상세 설정
         <button style="background:transparent; border:none; color:#ff4444; font-size:12px; cursor:pointer;" onclick="deleteExercise()">🗑️ 운동 삭제</button>
       </div>
       <div id="config-sets-container"></div>
@@ -152,20 +135,22 @@
 </div>
 
 <div id="modal-add-ex" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; justify-content:center; align-items:center;">
-    <div style="background:var(--card); padding:20px; border-radius:12px; width:80%; max-width:320px; text-align:center; border:1px solid #333;">
+    <div style="background:var(--card); padding:20px; border-radius:12px; width:90%; max-width:350px; text-align:center; border:1px solid #333;">
       <h3 style="margin-top:0; color:var(--accent);">새 운동 추가</h3>
-      <input type="text" id="new-ex-name" placeholder="운동 이름 (예: 플랭크)" style="width:100%; padding:12px; margin-bottom:15px; box-sizing:border-box; background:#000; color:#fff; border:1px solid #555; border-radius:8px; font-size:16px;">
+      <input type="text" id="new-ex-name" placeholder="운동 이름 (예: 덤벨 프레스)" style="width:100%; padding:12px; margin-bottom:15px; box-sizing:border-box; background:#000; color:#fff; border:1px solid #555; border-radius:8px; font-size:16px;">
       
-      <div style="display:flex; gap:10px; margin-bottom:10px;">
-        <button class="btn" style="padding:15px 5px; margin:0; font-size:14px;" onclick="submitNewExercise('reps')">🔄 횟수 반복</button>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+        <button class="btn" style="padding:15px 5px; margin:0; font-size:14px;" onclick="submitNewExercise('reps')">🔄 맨몸 횟수</button>
         <button class="btn" style="padding:15px 5px; margin:0; font-size:14px; background:#222; border-color:#444;" onclick="submitNewExercise('time')">⏱️ 시간 버티기</button>
+        <button class="btn" style="padding:15px 5px; margin:0; font-size:14px; background:#222; border-color:#444;" onclick="submitNewExercise('weight')">🏋️ 중량 운동</button>
+        <button class="btn" style="padding:15px 5px; margin:0; font-size:14px; background:#222; border-color:#444;" onclick="submitNewExercise('cardio')">🏃 유산소(머신)</button>
       </div>
       <button class="btn abort-btn" style="margin-top:10px; padding:10px;" onclick="closeAddModal()">취소</button>
     </div>
 </div>
 
 <div id="modal-edit-record" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; justify-content:center; align-items:center;">
-  <div style="background:var(--card); padding:20px; border-radius:12px; width:90%; max-width:350px; border:1px solid #333; max-height: 85vh; overflow-y: auto;">
+  <div style="background:var(--card); padding:20px; border-radius:12px; width:95%; max-width:400px; border:1px solid #333; max-height: 85vh; overflow-y: auto;">
     <h3 style="margin-top:0; color:var(--accent); text-align:center;">기록 상세 및 수정</h3>
     
     <div style="margin-bottom: 15px;">
@@ -215,12 +200,15 @@
   let userConfig = JSON.parse(localStorage.getItem('userWorkoutConfig'));
   if (!userConfig || Object.keys(userConfig).length === 0) {
     userConfig = {
-      '푸쉬업': { type: 'reps', prep: 4, sets: [45, 30, 25], rest: 30, speed: 500 }, 
-      '스쿼트': { type: 'reps', prep: 4, sets: [20, 12, 10], rest: 30, speed: 1000 }, 
-      '턱걸이': { type: 'reps', prep: 10, sets: [10], rest: 0, speed: 1000 } 
+      '푸쉬업': { type: 'reps', prep: 4, sets: [45, 30, 25], rest: 30, speed: 1000 }, 
+      '플랭크': { type: 'time', prep: 4, sets: [60], rest: 30 },
+      '덤벨 프레스': { type: 'weight', prep: 4, sets: [{weight: 15, reps: 12}], rest: 60, speed: 1500 },
+      '트레드밀': { type: 'cardio', prep: 10, sets: [{time: 1200, speed: 6.5, incline: 3}], rest: 0 }
     };
     localStorage.setItem('userWorkoutConfig', JSON.stringify(userConfig));
   }
+  
+  // 하위 호환성 (구버전 데이터 마이그레이션)
   for (let key in userConfig) {
     if (!userConfig[key].type) userConfig[key].type = 'reps';
   }
@@ -238,40 +226,28 @@
   let tempoInterval = null;
   let isCancelled = false;
   let resolveCurrentPromise = null;
-// --- 화면 꺼짐 방지(Wake Lock) 관련 변수 및 함수 ---
   let wakeLock = null;
 
   async function requestWakeLock() {
     try {
       if ('wakeLock' in navigator) {
         wakeLock = await navigator.wakeLock.request('screen');
-        console.log('화면 꺼짐 방지 활성화');
       }
-    } catch (err) {
-      console.error('Wake Lock 요청 실패:', err);
-    }
+    } catch (err) { console.error('Wake Lock 실패:', err); }
   }
 
   function releaseWakeLock() {
     if (wakeLock !== null) {
-      wakeLock.release().then(() => {
-        wakeLock = null;
-        console.log('화면 꺼짐 방지 해제');
-      });
+      wakeLock.release().then(() => { wakeLock = null; });
     }
   }
 
-  // 모바일 기기 특성상 다른 앱(카톡 등)으로 전환했다가 돌아오면 
-  // OS가 잠금을 강제로 풀어버리므로, 화면이 다시 보일 때 재요청하는 로직입니다.
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && document.getElementById('view-timer').classList.contains('active')) {
-      // 타이머 뷰가 활성화되어 있고, 완료된 상태가 아니라면 다시 잠금
-      if (document.getElementById('ex-label').innerText !== "🎉 완료") {
-        requestWakeLock();
-      }
+      if (document.getElementById('ex-label').innerText !== "🎉 완료") requestWakeLock();
     }
   });
-  // 상세/수정을 위한 글로벌 변수
+
   let currentEditRecordIndex = null;
   let currentEditRecordData = null;
 
@@ -302,7 +278,6 @@
 
       const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
 
-      // 뱃지 표시 로직 (문자열 기록과 객체 기록 모두 호환되도록 수정)
       if (history[dateKey] && history[dateKey].length > 0) {
         let counts = {};
         history[dateKey].forEach(ex => { 
@@ -319,9 +294,7 @@
       el.onclick = () => { 
         selectedDayNumber = i; selectedDateKey = dateKey;
         document.getElementById('select-title').innerText = `${currentMonth + 1}월 ${i}일 운동`; 
-        renderExistingRecords(); 
-        renderExerciseList(); 
-        showView('view-select'); 
+        renderExistingRecords(); renderExerciseList(); showView('view-select'); 
       };
       grid.appendChild(el);
     }
@@ -339,12 +312,13 @@
       list.innerHTML = '';
       todayRecords.forEach((item, idx) => {
         let exName = typeof item === 'string' ? item : item.name;
-        
-        // 상세 정보가 있으면 요약해서 보여줌 (예: 3세트 완료)
         let summaryHtml = "";
+        
         if (typeof item === 'object' && item.details && item.details.sets) {
-          let unit = item.details.type === 'time' ? '초' : '회';
-          summaryHtml = `<div style="font-size: 11px; color: #888; margin-top: 4px;">총 ${item.details.sets.length}세트 진행 (${unit})</div>`;
+          let typeStr = "회";
+          if (item.details.type === 'time') typeStr = "초";
+          else if (item.details.type === 'cardio') typeStr = "분";
+          summaryHtml = `<div style="font-size: 11px; color: #888; margin-top: 4px;">총 ${item.details.sets.length}세트 진행</div>`;
         }
 
         list.innerHTML += `
@@ -354,24 +328,20 @@
               ${summaryHtml}
             </div>
             <div>
-              <button style="background: transparent; border: none; color: #4dabf7; cursor: pointer; margin-right: 10px; padding: 5px;" onclick="event.stopPropagation(); openEditRecordModal(${idx})">상세/수정</button>
+              <button style="background: transparent; border: none; color: #4dabf7; cursor: pointer; margin-right: 10px; padding: 5px;" onclick="event.stopPropagation(); openEditRecordModal(${idx})">상세</button>
               <button style="background: transparent; border: none; color: #ff4444; cursor: pointer; padding: 5px;" onclick="event.stopPropagation(); deleteRecord(${idx})">삭제</button>
             </div>
           </div>
         `;
       });
-    } else {
-      section.style.display = 'none';
-    }
+    } else { section.style.display = 'none'; }
   }
 
-  // --- 기존 기록 상세 보기 및 수정 모달 관련 함수 ---
   function openEditRecordModal(idx) {
     let history = JSON.parse(localStorage.getItem('workoutData')) || {};
     let record = history[selectedDateKey][idx];
     currentEditRecordIndex = idx;
     
-    // 이전 버전(문자열만 저장되던 시절) 데이터 호환성 처리
     if (typeof record === 'string') {
       currentEditRecordData = {
         name: record,
@@ -388,66 +358,86 @@
 
   function closeEditRecordModal() {
     document.getElementById('modal-edit-record').style.display = 'none';
-    currentEditRecordIndex = null;
-    currentEditRecordData = null;
+    currentEditRecordIndex = null; currentEditRecordData = null;
   }
 
   function renderEditRecSets() {
     const container = document.getElementById('edit-rec-sets-container');
     container.innerHTML = '';
     let sets = currentEditRecordData.details.sets;
-    let isTime = currentEditRecordData.details.type === 'time';
-    let unit = isTime ? '초' : '회';
+    let type = currentEditRecordData.details.type;
 
     sets.forEach((val, idx) => {
-      container.innerHTML += `
-        <div style="display: flex; align-items: center; justify-content: space-between; background: #1a1a1a; padding: 8px 12px; border-radius: 8px; margin-bottom: 6px;">
-          <span style="font-size: 15px; font-weight: bold;">${idx + 1}세트</span>
-          <div>
-            <input type="number" class="edit-rec-set-input" value="${val}" min="1" style="width: 60px; padding: 6px; font-size: 16px; text-align: center; background: #000; border: 1px solid var(--accent); color: var(--accent); border-radius: 6px; font-weight: bold;">
-            <span style="font-size: 14px; margin-left: 4px;">${unit}</span>
-          </div>
-        </div>
+      let html = `
+        <div style="display: flex; align-items: center; justify-content: space-between; background: #1a1a1a; padding: 8px 12px; border-radius: 8px; margin-bottom: 6px; flex-wrap:wrap; gap:5px;">
+          <span style="font-size: 14px; font-weight: bold;">${idx + 1}세트</span>
+          <div style="display:flex; gap:5px; align-items:center;">
       `;
+
+      if (type === 'weight') {
+        html += `<input type="number" class="edit-rec-w" value="${val.weight}" step="0.5" style="width: 50px; padding: 4px; font-size: 14px; background: #000; border: 1px solid var(--accent); color: var(--accent); border-radius: 6px;"><span>kg</span>
+                 <input type="number" class="edit-rec-r" value="${val.reps}" style="width: 40px; padding: 4px; font-size: 14px; background: #000; border: 1px solid var(--accent); color: var(--accent); border-radius: 6px;"><span>회</span>`;
+      } else if (type === 'cardio') {
+        html += `<input type="number" class="edit-rec-time" value="${Math.floor(val.time/60)}" style="width: 40px; padding: 4px; font-size: 14px; background: #000; border: 1px solid var(--accent); color: var(--accent); border-radius: 6px;"><span>분</span>
+                 <input type="number" class="edit-rec-spd" value="${val.speed}" step="0.1" style="width: 40px; padding: 4px; font-size: 14px; background: #000; border: 1px solid var(--accent); color: var(--accent); border-radius: 6px;"><span>속도</span>
+                 <input type="number" class="edit-rec-inc" value="${val.incline}" style="width: 35px; padding: 4px; font-size: 14px; background: #000; border: 1px solid var(--accent); color: var(--accent); border-radius: 6px;"><span>경사</span>`;
+      } else {
+        let unit = type === 'time' ? '초' : '회';
+        html += `<input type="number" class="edit-rec-basic" value="${val}" min="1" style="width: 50px; padding: 4px; font-size: 14px; background: #000; border: 1px solid var(--accent); color: var(--accent); border-radius: 6px;"><span>${unit}</span>`;
+      }
+      html += `</div></div>`;
+      container.innerHTML += html;
     });
   }
 
   function addEditRecSet() {
-    currentEditRecordData.details.sets.push(10);
+    let type = currentEditRecordData.details.type;
+    if(type === 'weight') currentEditRecordData.details.sets.push({weight: 10, reps: 10});
+    else if(type === 'cardio') currentEditRecordData.details.sets.push({time: 600, speed: 6.0, incline: 0});
+    else if(type === 'time') currentEditRecordData.details.sets.push(60);
+    else currentEditRecordData.details.sets.push(10);
     renderEditRecSets();
   }
 
   function removeEditRecSet() {
     if (currentEditRecordData.details.sets.length > 1) {
-      currentEditRecordData.details.sets.pop();
-      renderEditRecSets();
-    } else {
-      alert("최소 1개의 세트는 존재해야 합니다.");
-    }
+      currentEditRecordData.details.sets.pop(); renderEditRecSets();
+    } else { alert("최소 1개의 세트는 존재해야 합니다."); }
   }
 
   function saveRecordEdit() {
     let newName = document.getElementById('edit-rec-name').value.trim();
     if (!newName) { alert("운동 이름을 입력해주세요."); return; }
-
     currentEditRecordData.name = newName;
     
-    let inputs = document.querySelectorAll('.edit-rec-set-input');
+    let type = currentEditRecordData.details.type;
     let newSets = [];
-    inputs.forEach(input => {
-      let val = parseInt(input.value);
-      if (isNaN(val) || val < 1) val = 1;
-      newSets.push(val);
-    });
+    const rows = document.getElementById('edit-rec-sets-container').children;
+
+    for (let row of rows) {
+      if (type === 'weight') {
+        newSets.push({
+          weight: parseFloat(row.querySelector('.edit-rec-w').value) || 0,
+          reps: parseInt(row.querySelector('.edit-rec-r').value) || 1
+        });
+      } else if (type === 'cardio') {
+        let t = parseInt(row.querySelector('.edit-rec-time').value) || 10;
+        newSets.push({
+          time: t * 60,
+          speed: parseFloat(row.querySelector('.edit-rec-spd').value) || 6.0,
+          incline: parseInt(row.querySelector('.edit-rec-inc').value) || 0
+        });
+      } else {
+        newSets.push(parseInt(row.querySelector('.edit-rec-basic').value) || 1);
+      }
+    }
     currentEditRecordData.details.sets = newSets;
 
     let history = JSON.parse(localStorage.getItem('workoutData')) || {};
     history[selectedDateKey][currentEditRecordIndex] = currentEditRecordData;
     localStorage.setItem('workoutData', JSON.stringify(history));
 
-    closeEditRecordModal();
-    renderExistingRecords();
-    buildCalendar();
+    closeEditRecordModal(); renderExistingRecords(); buildCalendar();
   }
 
   function deleteRecord(idx) {
@@ -455,17 +445,13 @@
       let history = JSON.parse(localStorage.getItem('workoutData')) || {};
       if (history[selectedDateKey]) {
         history[selectedDateKey].splice(idx, 1);
-        if (history[selectedDateKey].length === 0) {
-          delete history[selectedDateKey];
-        }
+        if (history[selectedDateKey].length === 0) delete history[selectedDateKey];
         localStorage.setItem('workoutData', JSON.stringify(history));
-        renderExistingRecords();
-        buildCalendar();
+        renderExistingRecords(); buildCalendar();
       }
     }
   }
 
-  // --- 기존 세팅 및 타이머 로직들 ---
   function renderExerciseList() {
     const list = document.getElementById('exercise-list');
     list.innerHTML = '';
@@ -487,7 +473,9 @@
     if (userConfig[name]) { alert("이미 존재하는 운동입니다."); return; }
     
     if (type === 'reps') userConfig[name] = { type: 'reps', prep: 4, sets: [10], rest: 30, speed: 1000 };
-    else userConfig[name] = { type: 'time', prep: 4, sets: [60], rest: 30 };
+    else if (type === 'time') userConfig[name] = { type: 'time', prep: 4, sets: [60], rest: 30 };
+    else if (type === 'weight') userConfig[name] = { type: 'weight', prep: 4, sets: [{ weight: 10, reps: 10 }], rest: 60, speed: 1500 };
+    else if (type === 'cardio') userConfig[name] = { type: 'cardio', prep: 10, sets: [{ time: 600, speed: 6.0, incline: 0 }], rest: 0 };
     
     localStorage.setItem('userWorkoutConfig', JSON.stringify(userConfig));
     closeAddModal(); renderExerciseList(); 
@@ -507,9 +495,10 @@
     document.getElementById('input-prep').value = userConfig[name].prep;
     document.getElementById('input-rest').value = userConfig[name].rest;
     
-    const speedRow = document.getElementById('input-speed').parentElement.parentElement;
-    if (userConfig[name].type === 'time') speedRow.style.display = 'none';
-    else {
+    const speedRow = document.getElementById('speed-config-row');
+    if (userConfig[name].type === 'time' || userConfig[name].type === 'cardio') {
+      speedRow.style.display = 'none';
+    } else {
       speedRow.style.display = 'flex';
       document.getElementById('input-speed').value = (userConfig[name].speed / 1000).toFixed(1);
     }
@@ -519,43 +508,78 @@
   function renderSets() {
     const container = document.getElementById('config-sets-container');
     container.innerHTML = '';
-    const sets = userConfig[currentEx].sets;
-    const isTime = userConfig[currentEx].type === 'time';
-    const unit = isTime ? '초' : '회'; 
+    const ex = userConfig[currentEx];
+    const sets = ex.sets;
 
     sets.forEach((val, index) => {
-      container.innerHTML += `
-        <div class="set-row">
-          <span>${index + 1}세트</span>
-          <div><input type="number" id="set-input-${index}" class="set-input sets-input" value="${val}" min="1"><span> ${unit}</span></div>
-        </div>
-      `;
+      let rowHtml = `<div class="set-row"><span>${index + 1}세트</span><div style="display: flex; gap: 6px; align-items:center;">`;
+      
+      if (ex.type === 'weight') {
+        rowHtml += `
+          <input type="number" class="set-input weight-input" value="${val.weight || 0}" step="0.5" style="width:55px;"><span>kg</span>
+          <input type="number" class="set-input reps-input" value="${val.reps || 10}" style="width:45px;"><span>회</span>
+        `;
+      } else if (ex.type === 'cardio') {
+        rowHtml += `
+          <input type="number" class="set-input time-input" value="${Math.floor((val.time || 600)/60)}" style="width:40px;"><span>분</span>
+          <input type="number" class="set-input speed-input" value="${val.speed || 6.0}" step="0.1" style="width:45px;"><span>속도</span>
+          <input type="number" class="set-input incline-input" value="${val.incline || 0}" style="width:35px;"><span>경사</span>
+        `;
+      } else {
+        let unit = ex.type === 'time' ? '초' : '회'; 
+        rowHtml += `<input type="number" class="set-input basic-input" value="${val}" min="1" style="width:60px;"><span> ${unit}</span>`;
+      }
+      
+      rowHtml += `</div></div>`;
+      container.innerHTML += rowHtml;
     });
   }
   
-  function addSet() { userConfig[currentEx].sets.push(10); renderSets(); }
+  function addSet() { 
+    const type = userConfig[currentEx].type;
+    if (type === 'weight') userConfig[currentEx].sets.push({weight: 10, reps: 10});
+    else if (type === 'cardio') userConfig[currentEx].sets.push({time: 600, speed: 6.0, incline: 0});
+    else if (type === 'time') userConfig[currentEx].sets.push(60);
+    else userConfig[currentEx].sets.push(10);
+    renderSets(); 
+  }
+
   function removeSet() {
     if (userConfig[currentEx].sets.length > 1) { userConfig[currentEx].sets.pop(); renderSets(); } 
     else alert("최소 1개의 세트는 존재해야 합니다.");
   }
 
   function saveAndStart() {
-    let prepVal = parseInt(document.getElementById('input-prep').value) || 4;
-    let restVal = parseInt(document.getElementById('input-rest').value) || 0;
+    userConfig[currentEx].prep = parseInt(document.getElementById('input-prep').value) || 4; 
+    userConfig[currentEx].rest = parseInt(document.getElementById('input-rest').value) || 0; 
     
-    userConfig[currentEx].prep = prepVal; 
-    userConfig[currentEx].rest = restVal; 
-    
-    if (userConfig[currentEx].type !== 'time') {
+    if (userConfig[currentEx].type === 'reps' || userConfig[currentEx].type === 'weight') {
       let speedSec = parseFloat(document.getElementById('input-speed').value) || 1.0;
       userConfig[currentEx].speed = speedSec * 1000; 
     }
 
-    const inputs = document.querySelectorAll('.sets-input');
+    const rows = document.querySelectorAll('.set-row:not(#speed-config-row)');
     let newSets = [];
-    inputs.forEach(input => {
-      let val = parseInt(input.value); if(isNaN(val) || val < 1) val = 1; newSets.push(val);
+    
+    // config-section 내부의 진짜 set-row만 선택하기 위해 container 안에서만 찾음
+    const setRows = document.getElementById('config-sets-container').querySelectorAll('.set-row');
+    
+    setRows.forEach(row => {
+      if (userConfig[currentEx].type === 'weight') {
+        let w = parseFloat(row.querySelector('.weight-input').value) || 0;
+        let r = parseInt(row.querySelector('.reps-input').value) || 1;
+        newSets.push({ weight: w, reps: r });
+      } else if (userConfig[currentEx].type === 'cardio') {
+        let t = parseInt(row.querySelector('.time-input').value) || 10;
+        let s = parseFloat(row.querySelector('.speed-input').value) || 6.0;
+        let i = parseInt(row.querySelector('.incline-input').value) || 0;
+        newSets.push({ time: t * 60, speed: s, incline: i }); 
+      } else {
+        let val = parseInt(row.querySelector('.basic-input').value) || 1;
+        newSets.push(val);
+      }
     });
+    
     userConfig[currentEx].sets = newSets;
     localStorage.setItem('userWorkoutConfig', JSON.stringify(userConfig));
     initTimerView();
@@ -583,7 +607,6 @@
     requestWakeLock();
   }
 
-// --- 수정할 부분 3: startEngine ---
   async function startEngine() {
     if (audioCtx?.state === 'suspended') audioCtx.resume();
     document.getElementById('btn-run').style.display = 'none'; 
@@ -592,7 +615,6 @@
     
     const cfg = userConfig[currentEx]; 
     
-    // 속도와 타입을 파라미터로 전달
     await countdown("준비", cfg.prep, cfg.speed, cfg.type);
     if(isCancelled) return;
 
@@ -600,17 +622,17 @@
       await performSet(i + 1, cfg.sets[i], cfg.speed, cfg.type);
       if(isCancelled) return;
       if (i < cfg.sets.length - 1 && cfg.rest > 0) {
-        // 여기도 속도와 타입을 파라미터로 전달
         await countdown(`휴식 (${i+1}세트 완료)`, cfg.rest, cfg.speed, cfg.type);
         if(isCancelled) return;
       }
     }
     if(!isCancelled) finishWorkout();
   }
+
   function abortWorkout() {
     isCancelled = true;
     if (activeInterval) clearInterval(activeInterval); 
-    if (tempoInterval) { clearInterval(tempoInterval); tempoInterval = null; } // 메트로놈 정지
+    if (tempoInterval) { clearInterval(tempoInterval); tempoInterval = null; }
     if (resolveCurrentPromise) resolveCurrentPromise();
     showView('view-cal');
     releaseWakeLock();
@@ -619,12 +641,11 @@
   function forceComplete() {
     isCancelled = true; 
     if (activeInterval) clearInterval(activeInterval);
-    if (tempoInterval) { clearInterval(tempoInterval); tempoInterval = null; } // 메트로놈 정지
+    if (tempoInterval) { clearInterval(tempoInterval); tempoInterval = null; }
     if (resolveCurrentPromise) resolveCurrentPromise();
     finishWorkout(); 
   }
 
-// --- 수정할 부분 4: countdown ---
   function countdown(label, seconds, speed, type) {
     return new Promise(resolve => {
       resolveCurrentPromise = resolve;
@@ -633,14 +654,13 @@
       document.getElementById('ex-sub').innerText = "";
       document.getElementById('ex-main').innerText = count;
 
-      let phase = 0; // 템포 소리 높낮이용
+      let phase = 0;
 
       if(count <= 0) { resolve(); return; }
 
       function handleTick() {
-        if (type === 'reps') {
+        if (type === 'reps' || type === 'weight') {
           if (count <= 4 && count > 0) {
-            // 남은 시간 4초 이하일 때 설정된 템포에 맞춰 메트로놈 실행
             if (!tempoInterval) {
                play(300, 0.15); phase = 1;
                tempoInterval = setInterval(() => {
@@ -652,18 +672,14 @@
           } else if (count === 0) {
             if (activeInterval) clearInterval(activeInterval);
             if (tempoInterval) { clearInterval(tempoInterval); tempoInterval = null; }
-            play(880, 0.4); // 시작/완료 알림음
-            setTimeout(resolve, 1000);
+            play(880, 0.4); setTimeout(resolve, 1000);
           }
         } else { 
-          // 버티기 운동(time)은 마지막 5초에만 카운트음 재생
-          if (count <= 5 && count > 0) {
-            play(440, 0.2);
-          } else if (count === 0) {
+          if (count <= 5 && count > 0) play(440, 0.2);
+          else if (count === 0) {
             if (activeInterval) clearInterval(activeInterval);
             if (tempoInterval) { clearInterval(tempoInterval); tempoInterval = null; }
-            play(880, 0.4);
-            setTimeout(resolve, 1000);
+            play(880, 0.4); setTimeout(resolve, 1000);
           }
         }
       }
@@ -684,14 +700,34 @@
       }, 1000);
     });
   }
-// --- 수정할 부분 5: performSet ---
-  function performSet(setNum, repsOrTime, speed, type) {
+
+  function performSet(setNum, setConfig, speed, type) {
     return new Promise(resolve => {
       resolveCurrentPromise = resolve;
       document.getElementById('ex-label').innerText = `${setNum}세트 진행 중`;
       
-      if (type === 'time') {
-        let timeLeft = repsOrTime;
+      if (type === 'cardio') {
+        let timeLeft = setConfig.time;
+        document.getElementById('ex-main').innerText = `${Math.floor(timeLeft / 60)}:${String(timeLeft % 60).padStart(2, '0')}`;
+        document.getElementById('ex-sub').innerText = `속도: ${setConfig.speed} / 경사도: ${setConfig.incline}`;
+        play(440, 0.3); 
+        
+        activeInterval = setInterval(() => {
+          if(isCancelled) { clearInterval(activeInterval); return; }
+          timeLeft--;
+          
+          let min = Math.floor(timeLeft / 60);
+          let sec = String(timeLeft % 60).padStart(2, '0');
+          document.getElementById('ex-main').innerText = `${min}:${sec}`;
+          
+          if (timeLeft <= 5 && timeLeft > 0) play(440, 0.2); 
+          else if (timeLeft === 0) {
+            play(880, 0.5); clearInterval(activeInterval); setTimeout(resolve, 1000);
+          }
+        }, 1000);
+
+      } else if (type === 'time') {
+        let timeLeft = setConfig;
         document.getElementById('ex-main').innerText = timeLeft;
         document.getElementById('ex-sub').innerText = "🔥 끝까지 버티세요!";
         play(440, 0.3); 
@@ -701,35 +737,55 @@
           timeLeft--;
           document.getElementById('ex-main').innerText = timeLeft;
           
-          // 기존 timeLeft <= 3 에서 timeLeft <= 5 로 변경됨
           if (timeLeft <= 5 && timeLeft > 0) play(440, 0.2); 
           else if (timeLeft === 0) {
-            play(880, 0.5); 
-            clearInterval(activeInterval);
-            setTimeout(resolve, 1000);
+            play(880, 0.5); clearInterval(activeInterval); setTimeout(resolve, 1000);
           }
         }, 1000);
-      } else {
+        
+      } else if (type === 'weight') {
         let currentRep = 1; let phase = 0; 
-        document.getElementById('ex-main').innerText = `${currentRep} / ${repsOrTime}`;
+        let totalReps = setConfig.reps;
+        document.getElementById('ex-main').innerText = `${currentRep} / ${totalReps}`;
+        document.getElementById('ex-sub').innerText = `목표 중량: ${setConfig.weight}kg`;
+        play(300, 0.15); phase = 1;
+        
+        activeInterval = setInterval(() => {
+          if(isCancelled) { clearInterval(activeInterval); return; }
+          document.getElementById('ex-main').innerText = `${currentRep} / ${totalReps}`;
+          
+          if (phase === 0) { play(300, 0.15); phase = 1; } 
+          else {
+            play(600, 0.15); 
+            if (currentRep >= totalReps) { clearInterval(activeInterval); setTimeout(resolve, speed); } 
+            else { currentRep++; phase = 0; }
+          }
+        }, speed);
+
+      } else {
+        // 기존 reps
+        let currentRep = 1; let phase = 0; 
+        let totalReps = setConfig;
+        document.getElementById('ex-main').innerText = `${currentRep} / ${totalReps}`;
         document.getElementById('ex-sub').innerText = "⬇️ 내려가기";
         play(300, 0.15); phase = 1;
         
         activeInterval = setInterval(() => {
           if(isCancelled) { clearInterval(activeInterval); return; }
-          document.getElementById('ex-main').innerText = `${currentRep} / ${repsOrTime}`;
+          document.getElementById('ex-main').innerText = `${currentRep} / ${totalReps}`;
           document.getElementById('ex-sub').innerText = phase === 0 ? "⬇️ 내려가기" : "⬆️ 올라오기";
           
           if (phase === 0) { play(300, 0.15); phase = 1; } 
           else {
             play(600, 0.15); 
-            if (currentRep >= repsOrTime) { clearInterval(activeInterval); setTimeout(resolve, speed); } 
+            if (currentRep >= totalReps) { clearInterval(activeInterval); setTimeout(resolve, speed); } 
             else { currentRep++; phase = 0; }
           }
         }, speed);
       }
     });
   }
+
   function finishWorkout() {
     document.getElementById('btn-abort').style.display = 'none';
     document.getElementById('btn-force-complete').style.display = 'none'; 
@@ -737,12 +793,11 @@
     document.getElementById('ex-main').innerText = "오운완!"; 
     document.getElementById('ex-sub').innerText = "정말 수고하셨습니다";
     document.getElementById('action-buttons').style.display = 'block';
-// 화면 꺼짐 방지 해제
     releaseWakeLock();
+
     let history = JSON.parse(localStorage.getItem('workoutData')) || {};
     if (!history[selectedDateKey]) history[selectedDateKey] = [];
     
-    // 핵심 변경: 이제 이름뿐만 아니라 그 당시의 세트 설정값(details)도 함께 객체로 저장합니다.
     history[selectedDateKey].push({
       name: currentEx,
       details: JSON.parse(JSON.stringify(userConfig[currentEx]))
